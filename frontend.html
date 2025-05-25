@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Our AI Newsletter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'ai-blue': '#3b82f6', // Example blue
+                        'ai-purple': '#8b5cf6', // Example purple
+                        'ai-dark': '#111827', // Dark background
+                        'ai-light-text': '#f3f4f6',
+                        'ai-input-bg': '#1f2937',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--ai-dark-bg, #0a0f1f); /* Deep space blue/purple */
+            color: var(--ai-text-main, #e0e7ff); /* Light lavender text */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+            overflow-x: hidden; /* Prevent horizontal scroll on small screens */
+        }
+        .form-container {
+            background-color: var(--ai-container-bg, #161b29); /* Slightly lighter container */
+            padding: 2rem;
+            border-radius: 16px; /* More rounded corners */
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--ai-border-glow, rgba(129, 140, 248, 0.3)); /* Softer shadow, subtle glow */
+            width: 100%;
+            max-width: 600px;
+            border: 1px solid var(--ai-border-color, #2c334b); /* Subtle border */
+        }
+        .form-title {
+            font-size: 2.25rem; /* Larger title */
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #818cf8, #c084fc); /* Indigo to purple gradient */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--ai-label-text, #a5b4fc); /* Lighter indigo for labels */
+        }
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.875rem 1rem; /* Slightly more padding */
+            border-radius: 8px;
+            background-color: var(--ai-input-field-bg, #1f2937); /* Darker input field */
+            border: 1px solid var(--ai-input-border, #374151); /* Subtle input border */
+            color: var(--ai-input-text, #d1d5db); /* Light gray input text */
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            font-size: 1rem;
+        }
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--ai-focus-ring, #818cf8); /* Indigo focus ring */
+            box-shadow: 0 0 0 3px var(--ai-focus-shadow, rgba(129, 140, 248, 0.3));
+        }
+        .radio-group-label {
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: var(--ai-label-text, #a5b4fc);
+        }
+        .radio-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            padding: 0.75rem;
+            background-color: var(--ai-input-field-bg, #1f2937);
+            border-radius: 8px;
+            border: 1px solid var(--ai-input-border, #374151);
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+        .radio-option:hover {
+            background-color: #2c334b; /* Slightly lighter on hover */
+        }
+        .radio-option input[type="radio"] {
+            appearance: none;
+            width: 1.25em;
+            height: 1.25em;
+            border: 2px solid var(--ai-radio-border, #6b7280);
+            border-radius: 50%;
+            margin-right: 0.75em;
+            cursor: pointer;
+            position: relative;
+            top: 2px; /* Align better with text */
+        }
+        .radio-option input[type="radio"]:checked {
+            background-color: var(--ai-focus-ring, #818cf8);
+            border-color: var(--ai-focus-ring, #818cf8);
+        }
+        .radio-option input[type="radio"]:checked::before {
+            content: '';
+            display: block;
+            width: 0.65em;
+            height: 0.65em;
+            margin: auto;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .radio-option label {
+            color: var(--ai-input-text, #d1d5db);
+            cursor: pointer;
+        }
+        .submit-button {
+            width: 100%;
+            padding: 0.875rem;
+            background: linear-gradient(to right, var(--ai-blue, #3b82f6), var(--ai-purple, #8b5cf6));
+            color: white;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-size: 1.125rem; /* Larger button text */
+        }
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        .submit-button:active {
+            transform: translateY(0);
+        }
+        .message-box {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+        }
+        .message-box.success {
+            background-color: rgba(74, 222, 128, 0.2); /* Green with opacity */
+            color: #4ade80; /* Bright Green */
+            border: 1px solid #4ade80;
+        }
+        .message-box.error {
+            background-color: rgba(248, 113, 113, 0.2); /* Red with opacity */
+            color: #f87171; /* Bright Red */
+            border: 1px solid #f87171;
+        }
+
+        /* Custom scrollbar for a more modern feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+
+        /* Define CSS variables for theming if not using Tailwind's JIT effectively for this */
+        :root {
+            --ai-dark-bg: #0a0f1f;
+            --ai-text-main: #e0e7ff;
+            --ai-container-bg: #161b29;
+            --ai-border-glow: rgba(129, 140, 248, 0.3);
+            --ai-border-color: #2c334b;
+            --ai-label-text: #a5b4fc;
+            --ai-input-field-bg: #1f2937;
+            --ai-input-border: #374151;
+            --ai-input-text: #d1d5db;
+            --ai-focus-ring: #818cf8;
+            --ai-focus-shadow: rgba(129, 140, 248, 0.3);
+            --ai-radio-border: #6b7280;
+        }
+
+
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1 class="form-title">Stay Ahead with AI</h1>
+        <p class="text-center text-indigo-300 mb-8 -mt-4">Subscribe to your personalized AI newsletter.</p>
+
+        <form id="aiNewsletterForm">
+            <div class="mb-6">
+                <label for="name" class="form-label">Full Name</label>
+                <input type="text" id="name" name="name" class="form-input" placeholder="e.g., Ada Lovelace" required>
+            </div>
+
+            <div class="mb-6">
+                <label for="email" class="form-label">Email Address</label>
+                <input type="email" id="email" name="email" class="form-input" placeholder="ada@example.com" required>
+            </div>
+
+            <div class="mb-6">
+                <span class="radio-group-label">Choose Your AI Interests (select one primary interest):</span>
+                <div class="mt-2 space-y-3">
+                    <div class="radio-option">
+                        <input type="radio" id="topic_gen_ai" name="ai_topic" value="Generative AI" required>
+                        <label for="topic_gen_ai" class="ml-3">Generative AI (LLMs, Diffusion Models)</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="topic_ml_ops" name="ai_topic" value="ML Ops">
+                        <label for="topic_ml_ops" class="ml-3">ML Operations (Deployment, Monitoring)</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="topic_robotics" name="ai_topic" value="Robotics & Embodied AI">
+                        <label for="topic_robotics" class="ml-3">Robotics & Embodied AI</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="topic_ethics" name="ai_topic" value="AI Ethics & Safety">
+                        <label for="topic_ethics" class="ml-3">AI Ethics & Safety</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="topic_cv" name="ai_topic" value="Computer Vision">
+                        <label for="topic_cv" class="ml-3">Computer Vision</label>
+                    </div>
+                     <div class="radio-option">
+                        <input type="radio" id="topic_nlp" name="ai_topic" value="Natural Language Processing">
+                        <label for="topic_nlp" class="ml-3">Natural Language Processing (NLP)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-8">
+                <label for="linkedin" class="form-label">LinkedIn Profile URL (Optional)</label>
+                <input type="url" id="linkedin" name="linkedin" class="form-input" placeholder="https://linkedin.com/in/yourprofile">
+            </div>
+
+            <div>
+                <button type="submit" class="submit-button">
+                    Subscribe Now
+                </button>
+            </div>
+        </form>
+
+        <div id="messageBox" class="message-box" style="display: none;"></div>
+    </div>
+
+    <script>
+        // JavaScript to handle form submission
+        const form = document.getElementById('aiNewsletterForm');
+        const messageBox = document.getElementById('messageBox');
+
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            // Clear previous messages
+            messageBox.style.display = 'none';
+            messageBox.textContent = '';
+            messageBox.className = 'message-box'; // Reset classes
+
+            // Get form data
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
+            });
+
+            // Basic client-side validation (email format)
+            if (!validateEmail(data.email)) {
+                displayMessage('Please enter a valid email address.', 'error');
+                return;
+            }
+            
+            // Ensure an AI topic is selected
+            const selectedTopic = formData.get('ai_topic');
+            if (!selectedTopic) {
+                displayMessage('Please select an AI topic of interest.', 'error');
+                return;
+            }
+
+            // Show a loading state on the button (optional)
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.textContent;
+            submitButton.textContent = 'Submitting...';
+            submitButton.disabled = true;
+
+            try {
+                // Send data to the backend
+                // IMPORTANT: Replace '/api/subscribe' with your actual backend endpoint URL
+                const response = await fetch('/api/subscribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    displayMessage(result.message || 'Successfully subscribed!', 'success');
+                    form.reset(); // Reset the form on success
+                } else {
+                    displayMessage(result.message || 'Subscription failed. Please try again.', 'error');
+                }
+            } catch (error) {
+                console.error('Submission error:', error);
+                displayMessage('An error occurred. Please check your connection and try again.', 'error');
+            } finally {
+                // Restore button state
+                submitButton.textContent = originalButtonText;
+                submitButton.disabled = false;
+            }
+        });
+
+        function displayMessage(message, type) {
+            messageBox.textContent = message;
+            messageBox.classList.add(type); // 'success' or 'error'
+            messageBox.style.display = 'block';
+        }
+
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(String(email).toLowerCase());
+        }
+    </script>
+</body>
+</html>

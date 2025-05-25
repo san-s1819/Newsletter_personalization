@@ -1,0 +1,135 @@
+// server.js
+
+// --- Dependencies ---
+const express = require('express');
+const { Pool } = require('pg'); // PostgreSQL client
+const cors = require('cors'); // For enabling Cross-Origin Resource Sharing
+
+// --- Configuration ---
+const app = express();
+const PORT = process.env.PORT || 3001; // Backend server port
+
+// PostgreSQL connection configuration
+// IMPORTANT: Replace with your actual PostgreSQL connection details
+// It's best practice to use environment variables for sensitive data.
+const pool = new Pool({
+    user: process.env.DB_USER || 'your_db_user', // e.g., 'postgres'
+    host: process.env.DB_HOST || 'localhost',
+    database: process.env.DB_NAME || 'ai_newsletter_db',
+    password: process.env.DB_PASSWORD || 'your_db_password',
+    port: process.env.DB_PORT || 5432,
+});
+
+// --- Middleware ---
+app.use(cors()); // Enable CORS for all routes (for development, you might want to restrict this in production)
+app.use(express.json()); // Middleware to parse JSON bodies
+app.use(express.urlencoded({ extended: true })); // Middleware to parse URL-encoded bodies
+
+// --- Database Connection Test (Optional but Recommended) ---
+pool.connect((err, client, release) => {
+    if (err) {
+        return console.error('Error acquiring client for DB connection test:', err.stack);
+    }
+    client.query('SELECT NOW()', (err, result) => {
+        release(); // Release the client back to the pool
+        if (err) {
+            return console.error('Error executing test query:', err.stack);
+        }
+        console.log('Successfully connected to PostgreSQL. Server time:', result.rows[0].now);
+    });
+});
+
+
+// --- API Routes ---
+
+/**
+ * @route   POST /api/subscribe
+ * @desc    Subscribes a new user to the newsletter
+ * @access  Public
+ */
+app.post('/api/subscribe', async (req, res) => {
+    // Destructure and sanitize input (basic example)
+    const { name, email, ai_topic, linkedin } = req.body;
+
+    // Basic Validation (server-side)
+    if (!name || !email || !ai_topic) {
+        return res.status(400).json({ message: 'Name, email, and AI topic are required.' });
+    }
+
+    // Validate email format (simple regex)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: 'Invalid email format.' });
+    }
+
+    // Optional: Validate LinkedIn URL format if provided
+    if (linkedin) {
+        try {
+            new URL(linkedin); // This will throw an error if the URL is invalid
+        } catch (_) {
+            return res.status(400).json({ message: 'Invalid LinkedIn URL format.' });
+        }
+    }
+
+    try {
+        // SQL Query to insert data
+        // Using parameterized queries to prevent SQL injection
+        const insertQuery = `
+            INSERT INTO subscribers (name, email, ai_topic, linkedin_url, subscribed_at)
+            VALUES ($1, $2, $3, $4, NOW())
+            RETURNING id, email, subscribed_at;
+        `;
+        // Provide null for linkedin_url if it's empty or not provided
+        const values = [name, email, ai_topic, linkedin || null];
+
+        const result = await pool.query(insertQuery, values);
+
+        console.log('User subscribed:', result.rows[0]);
+        res.status(201).json({
+            message: 'Successfully subscribed! Welcome to the AI Newsletter.',
+            subscriber: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Error during subscription:', error);
+
+        // Check for unique constraint violation (e.g., email already exists)
+        // PostgreSQL error code for unique_violation is '23505'
+        if (error.code === '23505') {
+            // You might want to check error.constraint to see which constraint was violated
+            // For example, if you have a unique constraint on the 'email' column named 'subscribers_email_key'
+            if (error.constraint === 'subscribers_email_key') {
+                 return res.status(409).json({ message: 'This email address is already subscribed.' });
+            }
+            return res.status(409).json({ message: 'This entry already exists.' });
+        }
+
+        res.status(500).json({ message: 'Internal server error. Please try again later.' });
+    }
+});
+
+// --- Global Error Handler (Basic) ---
+// This should be the last middleware
+app.use((err, req, res, next) => {
+    console.error("Unhandled error:", err.stack);
+    res.status(500).send('Something broke!');
+});
+
+
+// --- Start Server ---
+app.listen(PORT, () => {
+    console.log(`AI Newsletter backend server running on http://localhost:${PORT}`);
+});
+
+// --- Graceful Shutdown (Optional but good practice) ---
+process.on('SIGINT', async () => {
+    console.log('SIGINT signal received: closing HTTP server and DB pool');
+    try {
+        await pool.end();
+        console.log('PostgreSQL pool has been closed');
+        process.exit(0);
+    } catch (error) {
+        console.error('Error closing PostgreSQL pool', error);
+        process.exit(1);
+    }
+});
