@@ -1,7 +1,11 @@
 // server.js
 
+// Load environment variables first
+require('dotenv').config();
+
 // --- Dependencies ---
 const express = require('express');
+const path = require('path');
 const { Pool } = require('pg'); // PostgreSQL client
 const cors = require('cors'); // For enabling Cross-Origin Resource Sharing
 
@@ -10,28 +14,29 @@ const app = express();
 const PORT = process.env.PORT || 3001; // Backend server port
 
 // PostgreSQL connection configuration
-// IMPORTANT: Replace with your actual PostgreSQL connection details
-// It's best practice to use environment variables for sensitive data.
 const pool = new Pool({
-    user: process.env.DB_USER || 'your_db_user', // e.g., 'postgres'
+    user: process.env.DB_USER || 'postgres',
     host: process.env.DB_HOST || 'localhost',
-    database: process.env.DB_NAME || 'ai_newsletter_db',
-    password: process.env.DB_PASSWORD || 'your_db_password',
+    database: process.env.DB_NAME || 'newsletter_subscribers',
+    password: process.env.DB_PASSWORD || 'password',
     port: process.env.DB_PORT || 5432,
 });
 
 // --- Middleware ---
-app.use(cors()); // Enable CORS for all routes (for development, you might want to restrict this in production)
+app.use(cors()); // Enable CORS for all routes
 app.use(express.json()); // Middleware to parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Middleware to parse URL-encoded bodies
 
-// --- Database Connection Test (Optional but Recommended) ---
+// Serve static files (HTML, CSS, JS)
+app.use(express.static(path.join(__dirname)));
+
+// --- Database Connection Test ---
 pool.connect((err, client, release) => {
     if (err) {
         return console.error('Error acquiring client for DB connection test:', err.stack);
     }
     client.query('SELECT NOW()', (err, result) => {
-        release(); // Release the client back to the pool
+        release();
         if (err) {
             return console.error('Error executing test query:', err.stack);
         }
@@ -39,6 +44,12 @@ pool.connect((err, client, release) => {
     });
 });
 
+// --- Routes ---
+
+// Serve the main HTML file at the root
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // --- API Routes ---
 
@@ -48,7 +59,6 @@ pool.connect((err, client, release) => {
  * @access  Public
  */
 app.post('/api/subscribe', async (req, res) => {
-    // Destructure and sanitize input (basic example)
     const { name, email, ai_topic, linkedin } = req.body;
 
     // Basic Validation (server-side)
@@ -65,23 +75,20 @@ app.post('/api/subscribe', async (req, res) => {
     // Optional: Validate LinkedIn URL format if provided
     if (linkedin) {
         try {
-            new URL(linkedin); // This will throw an error if the URL is invalid
+            new URL(linkedin);
         } catch (_) {
             return res.status(400).json({ message: 'Invalid LinkedIn URL format.' });
         }
     }
 
     try {
-        // SQL Query to insert data
-        // Using parameterized queries to prevent SQL injection
+        // SQL Query to insert data into PostgreSQL
         const insertQuery = `
             INSERT INTO subscribers (name, email, ai_topic, linkedin_url, subscribed_at)
             VALUES ($1, $2, $3, $4, NOW())
             RETURNING id, email, subscribed_at;
         `;
-        // Provide null for linkedin_url if it's empty or not provided
         const values = [name, email, ai_topic, linkedin || null];
-
         const result = await pool.query(insertQuery, values);
 
         console.log('User subscribed:', result.rows[0]);
@@ -93,11 +100,8 @@ app.post('/api/subscribe', async (req, res) => {
     } catch (error) {
         console.error('Error during subscription:', error);
 
-        // Check for unique constraint violation (e.g., email already exists)
-        // PostgreSQL error code for unique_violation is '23505'
+        // Check for unique constraint violation (email already exists)
         if (error.code === '23505') {
-            // You might want to check error.constraint to see which constraint was violated
-            // For example, if you have a unique constraint on the 'email' column named 'subscribers_email_key'
             if (error.constraint === 'subscribers_email_key') {
                  return res.status(409).json({ message: 'This email address is already subscribed.' });
             }
@@ -108,20 +112,35 @@ app.post('/api/subscribe', async (req, res) => {
     }
 });
 
-// --- Global Error Handler (Basic) ---
-// This should be the last middleware
+// Get all subscribers (for testing purposes)
+app.get('/api/subscribers', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, name, email, ai_topic, linkedin_url, subscribed_at FROM subscribers ORDER BY subscribed_at DESC');
+        res.json({
+            total: result.rows.length,
+            subscribers: result.rows
+        });
+    } catch (error) {
+        console.error('Error fetching subscribers:', error);
+        res.status(500).json({ message: 'Error fetching subscribers' });
+    }
+});
+
+// --- Global Error Handler ---
 app.use((err, req, res, next) => {
     console.error("Unhandled error:", err.stack);
     res.status(500).send('Something broke!');
 });
 
-
 // --- Start Server ---
 app.listen(PORT, () => {
     console.log(`AI Newsletter backend server running on http://localhost:${PORT}`);
+    console.log(`Frontend available at: http://localhost:${PORT}`);
+    console.log(`API endpoint: http://localhost:${PORT}/api/subscribe`);
+    console.log(`Subscribers endpoint: http://localhost:${PORT}/api/subscribers`);
 });
 
-// --- Graceful Shutdown (Optional but good practice) ---
+// --- Graceful Shutdown ---
 process.on('SIGINT', async () => {
     console.log('SIGINT signal received: closing HTTP server and DB pool');
     try {
